@@ -24,10 +24,10 @@ def slugify(s: str) -> str:
     return s[:60] or "chat"
 
 def ensure_db():
-    Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
         conn.execute(sql_text("CREATE EXTENSION IF NOT EXISTS vector;"))
         conn.execute(sql_text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+    Base.metadata.create_all(bind=engine)
 
 @router.on_event("startup")
 def _startup():
