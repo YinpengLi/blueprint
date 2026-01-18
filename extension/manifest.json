@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT KB Exporter (OneDrive Agent)",
+  "version": "0.3.0",
+  "description": "Export ChatGPT chats to your OneDrive-backed KB Agent (Render).",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["https://chatgpt.com/*"],
+  "action": { "default_title": "KB Exporter", "default_popup": "popup.html" },
+  "content_scripts": [
+    { "matches": ["https://chatgpt.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ]
+}
