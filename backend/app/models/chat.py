@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Text, String, Integer, ARRAY, ForeignKey
+from sqlalchemy import Text, String, Integer, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
@@ -18,8 +18,8 @@ class ChatSession(Base):
     topic: Mapped[str | None] = mapped_column(String(200), nullable=True)
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
 
-    onedrive_raw_path: Mapped[str] = mapped_column(Text, default="")
-    onedrive_note_path: Mapped[str] = mapped_column(Text, default="")
+    storage_raw_path: Mapped[str] = mapped_column(Text, default="")
+    storage_note_path: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[str] = mapped_column(Text, default="")
 
     messages = relationship("Message", back_populates="chat", cascade="all, delete-orphan")

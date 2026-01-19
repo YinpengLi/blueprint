@@ -15,12 +15,12 @@
   </style>
 </head>
 <body>
-  <h2>ChatGPT Knowledge Base Agent (OneDrive)</h2>
+  <h2>ChatGPT Knowledge Base Agent (Dropbox)</h2>
 
   <div class="box">
-    <h3>OneDrive</h3>
-    <p>Status: <span id="odstatus">checking...</span></p>
-    <p><a href="/api/auth/onedrive/start" target="_blank">Connect OneDrive</a></p>
+    <h3>Dropbox</h3>
+    <p>Status: <span id="dbstatus">checking...</span></p>
+    <p><a href="/api/auth/dropbox/start" target="_blank">Connect Dropbox</a></p>
     <button onclick="check()">Refresh status</button>
   </div>
 
@@ -36,7 +36,7 @@
       <input name="chat_id" placeholder="uuid"/>
       <label>File</label>
       <input type="file" name="file" required/>
-      <p>If you set <code>INGEST_API_KEY</code>, this form will fail unless you remove the key or use the extension which sends the header.</p>
+      <p>If you set <code>INGEST_API_KEY</code>, this form will fail unless you remove the key or upload via curl with the header.</p>
       <button type="submit">Upload</button>
     </form>
   </div>
@@ -55,9 +55,9 @@
 
 <script>
 async function check(){
-  const r = await fetch('/api/auth/onedrive/status');
+  const r = await fetch('/api/auth/dropbox/status');
   const j = await r.json();
-  document.getElementById('odstatus').textContent = j.connected_onedrive ? 'Connected' : 'Not connected';
+  document.getElementById('dbstatus').textContent = j.connected_dropbox ? 'Connected' : 'Not connected';
 }
 check();
 

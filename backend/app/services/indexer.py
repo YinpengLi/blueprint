@@ -25,7 +25,7 @@ def infer_project_and_tags(text: str):
                 project = project or proj
                 tags.add(proj)
                 tags.add(kw)
-    for kw in ["render", "onedrive", "dashboard", "mvp", "issb", "asrs", "aassb", "translation"]:
+    for kw in ["render", "dropbox", "dashboard", "mvp", "issb", "asrs", "aassb", "translation"]:
         if kw in t:
             tags.add(kw.upper() if kw in ["issb","asrs"] else kw)
     return project, sorted(tags)

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text as sql_text
 from app.db import get_db
 from app.security import require_api_key
-from app.api.onedrive_auth import get_access_token
-from app.services.onedrive import upload_bytes
+from app.api.dropbox_auth import get_access_token
+from app.services.dropbox import upload_bytes
 from app.config import settings
 
 router = APIRouter()
@@ -25,7 +25,7 @@ async def create_pack(payload: dict, x_api_key: str | None = Header(default=None
 
     rows = []
     for cid in chat_ids:
-        r = db.execute(sql_text("SELECT title, version, onedrive_note_path FROM chat_session WHERE id=:id"), {"id": cid}).fetchone()
+        r = db.execute(sql_text("SELECT title, version, storage_note_path FROM chat_session WHERE id=:id"), {"id": cid}).fetchone()
         if r:
             rows.append((cid, r[0], r[1], r[2]))
 
@@ -41,7 +41,7 @@ async def create_pack(payload: dict, x_api_key: str | None = Header(default=None
 
     access_token = await get_access_token(db)
     connected = bool(access_token)
-    path = f"{settings.KB_ONEDRIVE_ROOT}/_Packs/{project}/{ymd}__{slug}__context-pack.md"
+    path = f"{settings.KB_DROPBOX_ROOT}/_Packs/{project}/{ymd}__{slug}__context-pack.md"
     if connected:
-        await upload_bytes(access_token, path, pack.encode("utf-8"), "text/markdown")
-    return {"connected_onedrive": connected, "onedrive_path": path, "pack_text": pack}
+        await upload_bytes(access_token, path, pack.encode("utf-8"))
+    return {"connected_dropbox": connected, "storage_path": path, "pack_text": pack}

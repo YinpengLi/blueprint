@@ -13,8 +13,8 @@ from app.services.embeddings import embed
 from app.services.indexer import infer_project_and_tags, build_tsvector
 from app.services.file_extract import extract_text
 from app.config import settings
-from app.api.onedrive_auth import get_access_token
-from app.services.onedrive import upload_bytes
+from app.api.dropbox_auth import get_access_token
+from app.services.dropbox import upload_bytes
 
 router = APIRouter()
 
@@ -24,6 +24,7 @@ def slugify(s: str) -> str:
     return s[:60] or "chat"
 
 def ensure_db():
+    # ensure pgvector before tables
     with engine.begin() as conn:
         conn.execute(sql_text("CREATE EXTENSION IF NOT EXISTS vector;"))
         conn.execute(sql_text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
@@ -53,7 +54,6 @@ async def ingest_chat(payload: dict, x_api_key: str | None = Header(default=None
     for t in inferred_tags:
         tags.add(t)
 
-    # Incremental versioning by source_url
     root_id = None
     version = 1
     if source_url:
@@ -73,8 +73,8 @@ async def ingest_chat(payload: dict, x_api_key: str | None = Header(default=None
     y, mm, dd = now.strftime("%Y"), now.strftime("%m"), now.strftime("%d")
     slug = slugify(title)
 
-    raw_base = f"{settings.KB_ONEDRIVE_ROOT}/_Raw/{y}/{mm}/{dd}/chat_{chat_id}__{slug}"
-    note_base = f"{settings.KB_ONEDRIVE_ROOT}/_Notes/{project}/{area}/{topic}"
+    raw_base = f"{settings.KB_DROPBOX_ROOT}/_Raw/{y}/{mm}/{dd}/chat_{chat_id}__{slug}"
+    note_base = f"{settings.KB_DROPBOX_ROOT}/_Notes/{project}/{area}/{topic}"
     note_name = f"{y}-{mm}-{dd}__{slug}__v{version}__{chat_id}.md"
     note_path = f"{note_base}/{note_name}"
 
@@ -86,16 +86,16 @@ async def ingest_chat(payload: dict, x_api_key: str | None = Header(default=None
     md = "\n".join(md_lines)
 
     if connected:
-        await upload_bytes(access_token, f"{raw_base}/conversation.json", json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"), "application/json")
-        await upload_bytes(access_token, f"{raw_base}/conversation.md", md.encode("utf-8"), "text/markdown")
-        await upload_bytes(access_token, f"{raw_base}/files_manifest.json", json.dumps(payload.get("ui_files") or [], ensure_ascii=False, indent=2).encode("utf-8"), "application/json")
-        await upload_bytes(access_token, note_path, md.encode("utf-8"), "text/markdown")
+        await upload_bytes(access_token, f"{raw_base}/conversation.json", json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"))
+        await upload_bytes(access_token, f"{raw_base}/conversation.md", md.encode("utf-8"))
+        await upload_bytes(access_token, f"{raw_base}/files_manifest.json", json.dumps(payload.get("ui_files") or [], ensure_ascii=False, indent=2).encode("utf-8"))
+        await upload_bytes(access_token, note_path, md.encode("utf-8"))
 
     chat = ChatSession(
         id=chat_id, root_id=root_id, version=version,
         title=title, source_url=source_url, captured_at=captured_at,
         project=project, area=area, topic=topic, tags=sorted(tags),
-        onedrive_raw_path=raw_base, onedrive_note_path=note_path,
+        storage_raw_path=raw_base, storage_note_path=note_path,
         created_at=datetime.datetime.utcnow().isoformat() + "Z"
     )
     db.add(chat)
@@ -112,7 +112,7 @@ async def ingest_chat(payload: dict, x_api_key: str | None = Header(default=None
             build_tsvector(db, c.id, ct)
         db.commit()
 
-    return {"chat_id": str(chat_id), "root_id": str(root_id), "version": version, "connected_onedrive": connected, "onedrive_note_path": note_path}
+    return {"chat_id": str(chat_id), "root_id": str(root_id), "version": version, "connected_dropbox": connected, "note_path": note_path}
 
 @router.post("/upload")
 async def upload_file(
@@ -135,21 +135,22 @@ async def upload_file(
     access_token = await get_access_token(db)
     connected = bool(access_token)
 
-    path = f"{settings.KB_ONEDRIVE_ROOT}/_Files/{project}/{area}/{topic}/{ymd}__{sha[:8]}__{file.filename}"
+    path = f"{settings.KB_DROPBOX_ROOT}/_Files/{project}/{area}/{topic}/{ymd}__{sha[:8]}__{file.filename}"
     if connected:
-        await upload_bytes(access_token, path, data, file.content_type or "application/octet-stream")
+        await upload_bytes(access_token, path, data)
 
     text = extract_text(file.filename, data)
-    fa = FileAsset(chat_id=chat_id, filename=file.filename, mime=file.content_type or "", onedrive_path=path, sha256=sha, extracted_text=text)
+    fa = FileAsset(chat_id=chat_id, filename=file.filename, mime=file.content_type or "", storage_path=path, sha256=sha, extracted_text=text)
     db.add(fa); db.commit()
 
     if text:
         chunks = chunk_text(text)
         embs = await embed(chunks) if chunks else []
+        tmp_chat = str(uuid.uuid4())
         for i, (ct, ev) in enumerate(zip(chunks, embs)):
-            c = Chunk(chat_id=str(chat_id) if chat_id else str(uuid.uuid4()), source_type="file", chunk_idx=i, chunk_text=ct, embedding=ev)
+            c = Chunk(chat_id=str(chat_id) if chat_id else tmp_chat, source_type="file", chunk_idx=i, chunk_text=ct, embedding=ev)
             db.add(c); db.flush()
             build_tsvector(db, c.id, ct)
         db.commit()
 
-    return {"stored": True, "connected_onedrive": connected, "onedrive_path": path, "sha256": sha, "extracted": bool(text)}
+    return {"stored": True, "connected_dropbox": connected, "storage_path": path, "sha256": sha, "extracted": bool(text)}

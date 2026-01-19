@@ -54,7 +54,7 @@ async def search(q: str = Query(..., min_length=1), mode: str = "hybrid", limit:
 
     out = []
     for it in items:
-        row = db.execute(sql_text("""            SELECT title, source_url, project, area, topic, tags, onedrive_note_path, version
+        row = db.execute(sql_text("""            SELECT title, source_url, project, area, topic, tags, storage_note_path, version
             FROM chat_session WHERE id = :id
         """), {"id": it["chat_id"]}).fetchone()
         if not row:

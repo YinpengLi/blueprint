@@ -8,7 +8,7 @@ class FileAsset(Base):
     chat_id: Mapped[str | None] = mapped_column(ForeignKey("chat_session.id", ondelete="SET NULL"), index=True, nullable=True)
     filename: Mapped[str] = mapped_column(Text)
     mime: Mapped[str] = mapped_column(Text, default="application/octet-stream")
-    onedrive_path: Mapped[str] = mapped_column(Text, default="")
+    storage_path: Mapped[str] = mapped_column(Text, default="")
     sha256: Mapped[str] = mapped_column(Text, default="")
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     chat = relationship("ChatSession", back_populates="files")

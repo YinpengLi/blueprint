@@ -4,7 +4,7 @@ services:
   env: python
   plan: starter
   buildCommand: pip install -r backend/requirements.txt
-  startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+  startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port 10000
   envVars:
     - key: DATABASE_URL
       fromDatabase:
@@ -12,13 +12,13 @@ services:
         property: connectionString
     - key: ENCRYPTION_KEY
       sync: false
-    - key: ONEDRIVE_CLIENT_ID
+    - key: DROPBOX_APP_KEY
       sync: false
-    - key: ONEDRIVE_CLIENT_SECRET
+    - key: DROPBOX_APP_SECRET
       sync: false
-    - key: ONEDRIVE_REDIRECT_URL
+    - key: DROPBOX_REDIRECT_URL
       sync: false
-    - key: KB_ONEDRIVE_ROOT
+    - key: KB_DROPBOX_ROOT
       value: /ChatGPT-KB
     - key: INGEST_API_KEY
       sync: false

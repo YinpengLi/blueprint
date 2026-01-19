@@ -17,9 +17,12 @@
   <label>API Key (optional)</label>
   <input id="apiKey" placeholder="X-API-Key value"/>
   <button id="save">Save Settings</button>
-  <button id="connect">Connect OneDrive</button>
-  <button id="status">Check OneDrive</button>
+  <button id="connect">Connect Dropbox</button>
+  <button id="status">Check Dropbox</button>
   <button id="export">Export This Chat</button>
+<button id="recent">Sync Recent (last 50)</button>
+<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="autoExport" /> Auto-export on chat open / new message</label>
+
   <pre id="out"></pre>
   <small>Tip: set INGEST_API_KEY in Render, then paste it here.</small>
 <script src="popup.js"></script>
